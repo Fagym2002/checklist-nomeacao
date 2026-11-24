@@ -214,6 +214,8 @@
   .ver-bar button{border:0;border-radius:10px;padding:10px 12px;font:inherit;font-size:13.5px;white-space:nowrap;font-weight:700;cursor:pointer;background:rgba(255,255,255,.12);color:#fff}
   .ver-bar button:disabled{opacity:.35;cursor:default}
   .ver-bar .rem{background:#b4443a}
+  .ver-bar .baixar{background:#f2b705;color:#0a2a52}
+  .ver-bar [hidden]{display:none}
   .file .meta{min-width:0;flex:1}
   .file .name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}   /* nomes longos (fotos) não alargam a página no celular */
   .file{
@@ -695,7 +697,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   const ver = document.createElement("div"); ver.className = "ver"; ver.hidden = true;
   ver.innerHTML = `<div class="ver-top"><b data-vnome></b><span data-vpos></span><button class="ver-x" data-vfechar title="Fechar">×</button></div>
     <div class="ver-area" data-varea></div>
-    <div class="ver-bar"><button data-vant title="Anterior">‹</button><button data-vzoom>🔍 Ampliar</button><button class="rem" data-vrem>Remover</button><button data-vprox title="Próxima">›</button></div>`;
+    <div class="ver-bar"><button data-vant title="Anterior">‹</button><button data-vzoom>🔍 Ampliar</button><button class="rem" data-vrem>Remover</button><button class="baixar" data-vbaixar hidden>⬇ Baixar PDF</button><button data-vprox title="Próxima">›</button></div>`;
   document.body.appendChild(ver);
   let verN = 0, verI = 0, verUrl = null;
   let verAvulso = null;   // PDF gerado (fora dos itens)
@@ -712,6 +714,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     else { area.innerHTML = `<div class="pdf-pags"><div class="pdf-msg">Carregando o PDF…</div></div>`; desenharPdf(f, area.firstChild, verN, verI); }
     ver.querySelector("[data-vzoom]").textContent = "🔍 Ampliar";
     ver.querySelector("[data-vrem]").style.display = verAvulso ? "none" : "";
+    ver.querySelector("[data-vbaixar]").hidden = !verAvulso;   // PDF gerado: dá para baixar daqui
     ver.querySelector("[data-vant]").disabled = verI === 0;
     ver.querySelector("[data-vprox]").disabled = verI >= fs.length - 1;
   }
@@ -772,6 +775,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     else if (t.closest("[data-vzoom]") || ((t.tagName === "IMG" || t.tagName === "CANVAS") && t.closest("[data-varea]"))){
       const a = ver.querySelector("[data-varea]"), z = a.classList.toggle("zoom");
       ver.querySelector("[data-vzoom]").textContent = z ? "🔍 Reduzir" : "🔍 Ampliar";
+    }
+    else if (t.closest("[data-vbaixar]") && verAvulso){
+      const u = URL.createObjectURL(verAvulso.file), a = document.createElement("a");
+      a.href = u; a.download = verAvulso.file.name;
+      if (/iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)) a.target = "_blank";
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(u), 60000);
     }
     else if (t.closest("[data-vrem]")){
       const f = state[verN].files[verI];
