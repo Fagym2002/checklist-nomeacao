@@ -1041,13 +1041,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
       const url = URL.createObjectURL(blob);
       const slug = (nome || "sem_nome").normalize("NFD").replace(/[̀-ͯ]/g,"").replace(/[^\w]+/g,"_").replace(/^_|_$/g,"");
       const fname = `Documentacao_Nomeacao_${slug}.pdf`;
-      const a = document.createElement("a"); a.href = url; a.download = fname; document.body.appendChild(a); a.click(); a.remove();
+      /* iPhone/iPad (Safari): o download automático abre o PDF por cima da página e esconde as opções;
+         lá o PDF é salvo pelo botão de compartilhar ("Salvar em Arquivos") */
+      const ehIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      /* sem download automático: a pessoa escolhe enviar, ver ou baixar */
 
       modal({
         title: "PDF gerado ✓",
-        text: `<b>${esc(fname)}</b> · ${total} páginas · ${fmtSize(blob.size)}<br>O download deve ter começado. Para mandar o PDF, toque em <b>Enviar por WhatsApp ou e-mail</b>. ${problems.length ? "<br>Atenção para os arquivos abaixo:" : ""}`,
+        text: `<b>${esc(fname)}</b> · ${total} página(s) · ${fmtSize(blob.size)}<br>${ehIOS ? "Para mandar ou guardar o PDF, toque em <b>Enviar por WhatsApp ou e-mail</b> (lá também tem <b>Salvar em Arquivos</b>)." : "Escolha o que fazer: <b>enviar</b> por WhatsApp ou e-mail, <b>ver</b> o PDF ou <b>baixar</b> para o aparelho."} ${problems.length ? "<br>Atenção para os arquivos abaixo:" : ""}`,
         list: problems,
-        actions: [["📤 Enviar por WhatsApp ou e-mail","btn-gold",() => compartilharPdf(blob, fname, nome)],["Ver o PDF","btn-ghost",() => verAbrirArquivo(new File([blob], fname, {type: "application/pdf"}))],["Baixar novamente","btn-dark",() => { const b = document.createElement("a"); b.href = url; b.download = fname; b.click(); }]]
+        actions: [["📤 Enviar por WhatsApp ou e-mail","btn-gold",() => compartilharPdf(blob, fname, nome)],["Ver o PDF","btn-ghost",() => verAbrirArquivo(new File([blob], fname, {type: "application/pdf"}))],["Baixar PDF","btn-dark",() => { const b = document.createElement("a"); b.href = url; b.download = fname; if (ehIOS) b.target = "_blank"; document.body.appendChild(b); b.click(); b.remove(); }]]
       });
 
       // ----- helpers that use fonts -----
